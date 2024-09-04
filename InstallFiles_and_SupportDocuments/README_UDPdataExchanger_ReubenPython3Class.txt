@@ -25,6 +25,9 @@ Raspberry Pi Buster
 
 (no Mac testing yet).
 
+Note: If you have trouble getting the UDP communication to work, two simpler, "BareBones", examples have been include:
+Rx_BareBonesUDPtest_ReubenPython3.py and Tx_BareBonesUDPtest_ReubenPython3.py
+
 ########################  
 
 ########################### Python module installation instructions, all OS's
