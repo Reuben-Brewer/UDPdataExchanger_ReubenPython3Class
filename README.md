@@ -12,19 +12,13 @@ www.reubotics.com
 
 Apache 2 License
 
-Software Revision D, 09/03/2024
+Software Revision E, 02/02/2025
 
 Verified working on: 
 
-Python 3.8
+Python 3.12
 
-Windows 10 64-bit
-
-Ubuntu 20.04
-
-Raspberry Pi Buster
-
-(no Mac testing yet).
+Windows 11 64-bit
 
 Note: If you have trouble getting the UDP communication to work, two simpler, "BareBones", examples have been include:
 
