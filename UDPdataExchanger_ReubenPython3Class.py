@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision D, 09/03/2024
+Software Revision E, 02/02/2024
 
-Verified working on: Python 3.8 for Windows 10/11 64-bit and Raspberry Pi Buster (may work on Mac in non-GUI mode, but haven't tested yet).
+Verified working on: Python 3.12 for Windows 11 64-bit.
 '''
 
 __author__ = 'reuben.brewer'
@@ -110,7 +110,15 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         self.UDP_PortIsOpenFlag = 0
         self.UDP_TimeoutCounter = 0
 
-        self.DataStream_State = 0 #Starts out not communicating data
+        self.UDP_RxPacketsReceivedCounter = 0
+        self.UDP_TxPacketsTransmittedCounter = 0
+
+        self.UDP_RxLastTimePacketWasReceived = -11111.0
+        self.WatchdogTimerExpirationState = 1
+
+        self.DataStream_State = 1 #Starts out communicating data
+
+        self.ToggleDataStreamOnOrOff_EventNeedsToBeFiredFlag = 0
 
         self.JSONstringToTx_Queue = Queue.Queue()
         #########################################################
@@ -119,6 +127,9 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         #########################################################
         #########################################################
         self.MostRecentDataDict = dict()
+
+        self.MostRecentDataDict["UDP_TxPacketsTransmittedCounter"] = self.UDP_TxPacketsTransmittedCounter
+        self.MostRecentDataDict["UDP_RxPacketsReceivedCounter"] = self.UDP_RxPacketsReceivedCounter
         #########################################################
         #########################################################
 
@@ -307,6 +318,18 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             self.NameToDisplay_UserSet = ""
 
         print("UDPdataExchanger_ReubenPython3Class __init__: NameToDisplay_UserSet" + str(self.NameToDisplay_UserSet))
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
+        if "WatchdogTimerExpirationDurationSeconds" in setup_dict:
+            self.WatchdogTimerExpirationDurationSeconds = self.PassThroughFloatValuesInRange_ExitProgramOtherwise("WatchdogTimerExpirationDurationSeconds", setup_dict["WatchdogTimerExpirationDurationSeconds"], 0.000, 100000.0)
+
+        else:
+            self.WatchdogTimerExpirationDurationSeconds = 0.25
+
+        print("UDPdataExchanger_ReubenPython3Class __init__: WatchdogTimerExpirationDurationSeconds: " + str(self.WatchdogTimerExpirationDurationSeconds))
         #########################################################
         #########################################################
 
@@ -785,13 +808,24 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
                     Rx_DataStr, Rx_IPV4addressOfSocketSendingThisData = self.UDP_SocketObject.recvfrom(self.UDP_BufferSizeInBytes)
                     Rx_DataStr = Rx_DataStr.decode('utf-8') #Python 3 requires .decode('utf-8') to be performed on data to get a normal string.
 
+                    ####### If there is a timeout (no received data), then we won't proceed beyond this line!
+
+                    self.UDP_RxPacketsReceivedCounter = self.UDP_RxPacketsReceivedCounter + 1
+                    self.UDP_RxLastTimePacketWasReceived = self.getPreciseSecondsTimeStampString() - self.StartingTime_CalculatedFromMainThread
+
                     if PrintDebuggingDataFlag == 1:
                         print("RxUDPmessage: Received UDP data (from IPV4 = " + str(Rx_IPV4addressOfSocketSendingThisData) +"): "  + str(Rx_DataStr) + ", len = " + str(len(Rx_DataStr)))
 
                     self.MostRecentDataDict["MostRecentMessage_Rx_Str"] = Rx_DataStr
 
+                    self.MostRecentDataDict["MostRecentMessage_Rx_Str_Length"] = len(Rx_DataStr)
+
                     Rx_DataDict = self.ConvertJSONstringToDict(Rx_DataStr)
                     self.MostRecentDataDict["MostRecentMessage_Rx_Dict"] = Rx_DataDict
+
+                    self.MostRecentDataDict["MostRecentMessage_Rx_LocalTimeOfReceivingComputer"] = self.UDP_RxLastTimePacketWasReceived
+
+                    self.MostRecentDataDict["UDP_RxPacketsReceivedCounter"] = self.UDP_RxPacketsReceivedCounter
 
                     return 1
 
@@ -809,8 +843,8 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         except:
             exceptions = sys.exc_info()[0]
 
-            if str(exceptions) != "<class 'socket.timeout'>": #Only display non-UDP-timeout exceptions
-                print("TxUDPmessage: exceptions: %s" % exceptions)
+            if str(exceptions).lower().find("timeout") == -1: #Only display non-UDP-timeout exceptions
+                print("RxUDPmessage: exceptions: %s" % exceptions)
                 traceback.print_exc()
             else:
                 self.UDP_TimeoutCounter = self.UDP_TimeoutCounter + 1
@@ -836,7 +870,11 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
                         if self.UDP_PortIsOpenFlag == 1:
 
                             self.UDP_SocketObject.sendto(StringToTx.encode('utf-8'), (self.IPV4_address, self.IPV4_Port)) #Python 3 requires .encode('utf-8') to be performed on string.
+                            self.UDP_TxPacketsTransmittedCounter = self.UDP_TxPacketsTransmittedCounter + 1
+
                             self.MostRecentDataDict["MostRecentMessage_Tx"] = StringToTx
+                            self.MostRecentDataDict["MostRecentMessage_Tx_Length"] = len(StringToTx)
+                            self.MostRecentDataDict["UDP_TxPacketsTransmittedCounter"] = self.UDP_TxPacketsTransmittedCounter
 
                             return 1
 
@@ -922,6 +960,51 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             ##########################################################################################################
             ##########################################################################################################
             ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            if self.WatchdogTimerExpirationDurationSeconds > 0.0:
+
+                ##########################################################################################################
+                if self.CurrentTime_CalculatedFromMainThread - self.UDP_RxLastTimePacketWasReceived >= self.WatchdogTimerExpirationDurationSeconds:
+                    self.WatchdogTimerExpirationState = 1
+                else:
+                    self.WatchdogTimerExpirationState = 0
+                ##########################################################################################################
+
+            else:
+                self.WatchdogTimerExpirationState = 0
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            self.MostRecentDataDict["WatchdogTimerExpirationState"] = self.WatchdogTimerExpirationState
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+            
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+            if self.ToggleDataStreamOnOrOff_EventNeedsToBeFiredFlag == 1:
+
+                if self.DataStream_State == 0:
+                    self.DataStream_State = 1
+                else:
+                    self.DataStream_State = 0
+
+                self.ToggleDataStreamOnOrOff_EventNeedsToBeFiredFlag = 0
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
+
+            ##########################################################################################################
+            ##########################################################################################################
+            ##########################################################################################################
             try:
 
                 ##########################################################################################################
@@ -931,7 +1014,8 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
                     ##########################################################################################################
                     try:
 
-                        self.RxUDPmessage(self.PrintAllReceivedSerialMessageForDebuggingFlag)
+                        if self.DataStream_State == 1:
+                            self.RxUDPmessage(self.PrintAllReceivedSerialMessageForDebuggingFlag)
 
                     except:
                         exceptions = sys.exc_info()[0]
@@ -949,10 +1033,11 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
                     ##########################################################################################################
                     try:
 
-                        if self.JSONstringToTx_Queue.qsize() > 0:
-                            JSONstringToTx_LocalCopy = self.JSONstringToTx_Queue.get()
+                        if self.DataStream_State == 1:
+                            if self.JSONstringToTx_Queue.qsize() > 0:
+                                JSONstringToTx_LocalCopy = self.JSONstringToTx_Queue.get()
 
-                            self.TxUDPmessage(JSONstringToTx_LocalCopy)
+                                self.TxUDPmessage(JSONstringToTx_LocalCopy)
 
                     except:
                         exceptions = sys.exc_info()[0]
@@ -1088,7 +1173,11 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
         #################################################
         #################################################
         self.DeviceInfo_Label = Label(self.myFrame, text="Device Info", width=50, font=("Helvetica", 12))
-        self.DeviceInfo_Label["text"] = self.NameToDisplay_UserSet
+        self.DeviceInfo_Label["text"] = self.NameToDisplay_UserSet + \
+                                        "\nRole = " + str(self.UDP_RxOrTxRole) + \
+                                        "\nIPV4 = " + str(self.IPV4_address) + \
+                                        "\nPort = " + str(self.IPV4_Port)
+
         self.DeviceInfo_Label.grid(row=0, column=0, padx=self.GUI_PADX, pady=self.GUI_PADY, columnspan=1, rowspan=1)
         #################################################
         #################################################
@@ -1166,6 +1255,11 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
                                                                                                     NumberOfDecimalsPlaceToUse = 5,
                                                                                                     NumberOfEntriesPerLine = 1,
                                                                                                     NumberOfTabsBetweenItems = 3)
+
+                    if self.WatchdogTimerExpirationState == 0:
+                        self.Data_Label["bg"] = self.TKinter_LightGreenColor
+                    else:
+                        self.Data_Label["bg"] = self.TKinter_LightRedColor
                     #######################################################
 
                     #######################################################

@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision B, 08/31/2024
+Software Revision E, 02/02/2024
 
-Verified working on: Python 3.8 for Windows 10 64-bit and (no Mac or Raspberry Pi Buster testing yet).
+Verified working on: Python 3.12 for Windows 11 64-bit.
 '''
 
 __author__ = 'reuben.brewer'
@@ -40,10 +40,10 @@ if __name__ == '__main__':
     EXIT_PROGRAM_FLAG = 0
 
     #######################################################################################################################
-    UDP_IP_ClientRxSide = "127.0.0.1" #IP address of this listening/client/Rx machine that's running this code and receiving data. We don't need to know the address that's sending/serving/Tx the data.
+    UDP_IP_ClientRxSide = "192.168.1.77" #IP address of this listening/client/Rx machine that's running this code and receiving data. We don't need to know the address that's sending/serving/Tx the data.
 
     UDP_Port = 1 #Cannot use 0 as a port.
-    UDP_RxBufferSizeInBytes = 64 #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
+    UDP_RxBufferSizeInBytes = 200 #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
 
     UDP_SocketObject = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  #AF_INET for internet, SOCK_DGRAM for UDP
     UDP_SocketObject.bind((UDP_IP_ClientRxSide, UDP_Port)) #bind() needed only on the client/Rx side, not on the server/Tx side.
@@ -68,10 +68,6 @@ if __name__ == '__main__':
 
     #######################################################################################################################
     keyboard.on_press_key("esc", ExitProgram_Callback)
-    keyboard.on_press_key("space", ExitProgram_Callback)
-    keyboard.on_press_key("c", ExitProgram_Callback)
-    keyboard.on_press_key("e", ExitProgram_Callback)
-    keyboard.on_press_key("q", ExitProgram_Callback)
     #######################################################################################################################
 
     #######################################################################################################################
@@ -87,7 +83,7 @@ if __name__ == '__main__':
             exceptions = sys.exc_info()[0]
             if str(exceptions) != "<class 'socket.timeout'>": #Only display non-UDP-timeout exceptions
                 print("Rx_TestCountDown_UDP_ReubenPython3, Exceptions: %s" % exceptions)
-                traceback.print_exc()
+                #traceback.print_exc()
 
     #######################################################################################################################
 

@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision D, 09/03/2024
+Software Revision E, 02/02/2024
 
-Verified working on: Python 3.8 for Windows 10/11 64-bit and Raspberry Pi Buster (may work on Mac in non-GUI mode, but haven't tested yet).
+Verified working on: Python 3.12 for Windows 11 64-bit.
 '''
 
 __author__ = 'reuben.brewer'
@@ -249,6 +249,26 @@ def ConvertDictToProperlyFormattedStringForPrinting(DictToPrint, NumberOfDecimal
 
 ##########################################################################################################
 ##########################################################################################################
+def IncrementTestFloat_Callback(OptionalArugment = 0):
+    global TestFloatToTx_CallbackOffset
+
+    TestFloatToTx_CallbackOffset = TestFloatToTx_CallbackOffset + 1.0
+    print("IncrementTestFloat_Callback event has fired!")
+##########################################################################################################
+##########################################################################################################
+
+##########################################################################################################
+##########################################################################################################
+def DecrementTestFloat_Callback(OptionalArugment = 0):
+    global TestFloatToTx_CallbackOffset
+
+    TestFloatToTx_CallbackOffset = TestFloatToTx_CallbackOffset - 1.0
+    print("DecrementTestFloat_Callback event has fired!")
+##########################################################################################################
+##########################################################################################################
+
+##########################################################################################################
+##########################################################################################################
 def GUI_update_clock():
     global root
     global EXIT_PROGRAM_FLAG
@@ -303,12 +323,40 @@ def GUI_update_clock():
 
 ##########################################################################################################
 ##########################################################################################################
+##########################################################################################################
 def ExitProgram_Callback(OptionalArugment = 0):
     global EXIT_PROGRAM_FLAG
+    global CSVdataLogger_ReubenPython3ClassObject
+    global CSVdataLogger_OPEN_FLAG
 
-    print("ExitProgram_Callback event fired!")
+    ##########################################################################################################
+    ##########################################################################################################
+    if CSVdataLogger_OPEN_FLAG == 1:
 
-    EXIT_PROGRAM_FLAG = 1
+        ##########################################################################################################
+        if CSVdataLogger_ReubenPython3ClassObject.IsSaving() == 0:
+            print("ExitProgram_Callback event fired!")
+            EXIT_PROGRAM_FLAG = 1
+        ##########################################################################################################
+
+        ##########################################################################################################
+        else:
+            print("CSV is saving, cannot exit!")
+            EXIT_PROGRAM_FLAG = 0
+        ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    else:
+        print("ExitProgram_Callback event fired!")
+        EXIT_PROGRAM_FLAG = 1
+    ##########################################################################################################
+    ##########################################################################################################
+
+##########################################################################################################
 ##########################################################################################################
 ##########################################################################################################
 
@@ -448,6 +496,9 @@ if __name__ == '__main__':
     global USE_MyPlotterPureTkinterStandAloneProcess_FLAG
     USE_MyPlotterPureTkinterStandAloneProcess_FLAG = 1
 
+    global USE_SinusoidalMotionInput_FLAG
+    USE_SinusoidalMotionInput_FLAG = 1
+
     global USE_KEYBOARD_FLAG
     USE_KEYBOARD_FLAG = 1
     #################################################
@@ -515,12 +566,15 @@ if __name__ == '__main__':
     #################################################
     #################################################
     global UDP_RxOrTxRole
+    global UDP_InternalOrExtenal
 
     argparse_Object = argparse.ArgumentParser()
     argparse_Object.add_argument("-r", "--role", nargs='?', const='arg_was_not_given', required=False, help="'Rx' or 'Tx'")
+    argparse_Object.add_argument("-ioe", "--InternalOrExternal", nargs='?', const='arg_was_not_given', required=False, help="'Internal' or 'External'")
     ARGV_Dict = vars(argparse_Object.parse_args())
     #print("ARGV_Dict: " + str(ARGV_Dict))
 
+    #################################################
     if ARGV_Dict["role"] != None:
          UDP_RxOrTxRole  = str(ARGV_Dict["role"]).lower()
 
@@ -528,9 +582,31 @@ if __name__ == '__main__':
              print("Error: role must be 'rx' or 'tx'.")
              exit()
     else:
-        UDP_RxOrTxRole = "tx"
+        UDP_RxOrTxRole = "rx"
 
     print("UDP_RxOrTxRole: " + str(UDP_RxOrTxRole))
+    #################################################
+
+    #################################################
+    if ARGV_Dict["InternalOrExternal"] != None:
+        UDP_InternalOrExtenal  = str(ARGV_Dict["InternalOrExternal"]).lower()
+
+        if UDP_InternalOrExtenal not in ["internal", "external"]:
+         print("Error: role must be 'internal' or 'external'.")
+         exit()
+
+        if UDP_InternalOrExtenal == "internal":
+            IPV4_address = "127.0.0.1"
+
+        if UDP_InternalOrExtenal == "external":
+            IPV4_address = "192.168.1.77"
+
+    else:
+        IPV4_address = "127.0.0.1"
+
+    #################################################
+
+    print("IPV4_address: " + str(IPV4_address))
     #################################################
     #################################################
 
@@ -572,10 +648,10 @@ if __name__ == '__main__':
     GUI_RootAfterCalNmackInterval_Milliseconds = 30
     
     global SinusoidalInput_MinValue
-    SinusoidalInput_MinValue = -100.0
+    SinusoidalInput_MinValue = -1.0
 
     global SinusoidalInput_MaxValue
-    SinusoidalInput_MaxValue = 100.0
+    SinusoidalInput_MaxValue = 1.0
 
     global SinusoidalInput_ROMtestTimeToPeakAngle
     SinusoidalInput_ROMtestTimeToPeakAngle = 3.0
@@ -601,6 +677,12 @@ if __name__ == '__main__':
 
     global UDPdataExchanger_MostRecentDict_TestTime
     UDPdataExchanger_MostRecentDict_TestTime = 0.0
+
+    global TestFloatToTx
+    TestFloatToTx = 0.0
+
+    global TestFloatToTx_CallbackOffset
+    TestFloatToTx_CallbackOffset = 0.0
     #################################################
     #################################################
 
@@ -683,19 +765,26 @@ if __name__ == '__main__':
     #################################################
     global UDPdataExchanger_setup_dict
     UDPdataExchanger_setup_dict = dict([("GUIparametersDict", UDPdataExchanger_GUIparametersDict),
-                                        ("NameToDisplay_UserSet", "UDPdataExchanger, Role = " + UDP_RxOrTxRole),
+                                        ("NameToDisplay_UserSet", "UDPdataExchanger"),
                                         ("UDP_RxOrTxRole", UDP_RxOrTxRole),
-                                        ("IPV4_address", "127.0.0.1"),
-                                        ("IPV4_Port", 7),
-                                        ("UDP_BufferSizeInBytes", 128),
-                                        ("MainThread_TimeToSleepEachLoop", 0.002)])
+                                        ("IPV4_address", IPV4_address),
+                                        ("IPV4_Port", 1),
+                                        ("UDP_BufferSizeInBytes", 100),
+                                        ("MainThread_TimeToSleepEachLoop", 0.030),
+                                        ("WatchdogTimerExpirationDurationSeconds", 0.5)])
     #################################################
 
     #################################################
-    if USE_UDPdataExchanger_FLAG == 1:
+    if USE_UDPdataExchanger_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
             UDPdataExchanger_Object = UDPdataExchanger_ReubenPython3Class(UDPdataExchanger_setup_dict)
             UDPdataExchanger_OPEN_FLAG = UDPdataExchanger_Object.OBJECT_CREATED_SUCCESSFULLY_FLAG
+
+            #################################################
+            if UDPdataExchanger_OPEN_FLAG != 1:
+                print("Failed to open UDPdataExchanger_ReubenPython3ClassObject.")
+                ExitProgram_Callback()
+            #################################################
 
         except:
             exceptions = sys.exc_info()[0]
@@ -739,10 +828,16 @@ if __name__ == '__main__':
                                                                 ("MainThread_TimeToSleepEachLoop", 0.002),
                                                                 ("SaveOnStartupFlag", 0)])
 
-    if USE_CSVdataLogger_FLAG == 1:
+    if USE_CSVdataLogger_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
             CSVdataLogger_ReubenPython3ClassObject = CSVdataLogger_ReubenPython3Class(CSVdataLogger_ReubenPython3ClassObject_setup_dict)
             CSVdataLogger_OPEN_FLAG = CSVdataLogger_ReubenPython3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+
+            #################################################
+            if CSVdataLogger_OPEN_FLAG != 1:
+                print("Failed to open CSVdataLogger_ReubenPython3ClassObject.")
+                ExitProgram_Callback()
+            #################################################
 
         except:
             exceptions = sys.exc_info()[0]
@@ -753,27 +848,34 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-    if USE_MyPrint_FLAG == 1:
+    global MyPrint_ReubenPython2and3ClassObject_GUIparametersDict
+    MyPrint_ReubenPython2and3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_MyPrint_FLAG),
+                                                                    ("root", Tab_MyPrint),
+                                                                    ("UseBorderAroundThisGuiObjectFlag", 0),
+                                                                    ("GUI_ROW", GUI_ROW_MyPrint),
+                                                                    ("GUI_COLUMN", GUI_COLUMN_MyPrint),
+                                                                    ("GUI_PADX", GUI_PADX_MyPrint),
+                                                                    ("GUI_PADY", GUI_PADY_MyPrint),
+                                                                    ("GUI_ROWSPAN", GUI_ROWSPAN_MyPrint),
+                                                                    ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_MyPrint)])
 
-        MyPrint_ReubenPython2and3ClassObject_GUIparametersDict = dict([("USE_GUI_FLAG", USE_GUI_FLAG and SHOW_IN_GUI_MyPrint_FLAG),
-                                                                        ("root", Tab_MyPrint),
-                                                                        ("UseBorderAroundThisGuiObjectFlag", 0),
-                                                                        ("GUI_ROW", GUI_ROW_MyPrint),
-                                                                        ("GUI_COLUMN", GUI_COLUMN_MyPrint),
-                                                                        ("GUI_PADX", GUI_PADX_MyPrint),
-                                                                        ("GUI_PADY", GUI_PADY_MyPrint),
-                                                                        ("GUI_ROWSPAN", GUI_ROWSPAN_MyPrint),
-                                                                        ("GUI_COLUMNSPAN", GUI_COLUMNSPAN_MyPrint)])
+    global MyPrint_ReubenPython2and3ClassObject_setup_dict
+    MyPrint_ReubenPython2and3ClassObject_setup_dict = dict([("NumberOfPrintLines", 10),
+                                                            ("WidthOfPrintingLabel", 200),
+                                                            ("PrintToConsoleFlag", 1),
+                                                            ("LogFileNameFullPath", os.getcwd() + "//TestLog.txt"),
+                                                            ("GUIparametersDict", MyPrint_ReubenPython2and3ClassObject_GUIparametersDict)])
 
-        MyPrint_ReubenPython2and3ClassObject_setup_dict = dict([("NumberOfPrintLines", 10),
-                                                                ("WidthOfPrintingLabel", 200),
-                                                                ("PrintToConsoleFlag", 1),
-                                                                ("LogFileNameFullPath", os.getcwd() + "//TestLog.txt"),
-                                                                ("GUIparametersDict", MyPrint_ReubenPython2and3ClassObject_GUIparametersDict)])
-
+    if USE_MyPrint_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
             MyPrint_ReubenPython2and3ClassObject = MyPrint_ReubenPython2and3Class(MyPrint_ReubenPython2and3ClassObject_setup_dict)
             MyPrint_OPEN_FLAG = MyPrint_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+
+            #################################################
+            if MyPrint_OPEN_FLAG != 1:
+                print("Failed to open MyPrint_ReubenPython2and3ClassObject.")
+                ExitProgram_Callback()
+            #################################################
 
         except:
             exceptions = sys.exc_info()[0]
@@ -830,10 +932,16 @@ if __name__ == '__main__':
                                                                                         ("YaxisLabelString", "Y-units (units)"),
                                                                                         ("ShowLegendFlag", 1)])
 
-    if USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1:
+    if USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         try:
             MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3Class(MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_setup_dict)
             MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.OBJECT_CREATED_SUCCESSFULLY_FLAG
+
+            #################################################
+            if MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG != 1:
+                print("Failed to open MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.")
+                ExitProgram_Callback()
+            #################################################
 
         except:
             exceptions = sys.exc_info()[0]
@@ -844,61 +952,40 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
-    if USE_KEYBOARD_FLAG == 1:
+    if USE_KEYBOARD_FLAG == 1 and EXIT_PROGRAM_FLAG == 0:
         keyboard.on_press_key("esc", ExitProgram_Callback)
-        #keyboard.on_press_key("space", ExitProgram_Callback)
-        #keyboard.on_press_key("e", ExitProgram_Callback)
-        keyboard.on_press_key("q", ExitProgram_Callback)
+
+        if UDP_RxOrTxRole == "tx":
+            keyboard.on_press_key("w", IncrementTestFloat_Callback)
+            keyboard.on_press_key("x", DecrementTestFloat_Callback)
     #################################################
     #################################################
 
     #################################################
     #################################################
-    if USE_UDPdataExchanger_FLAG == 1 and UDPdataExchanger_OPEN_FLAG != 1:
-        print("Failed to open UDPdataExchanger_ReubenPython3Class.")
-        #ExitProgram_Callback()
+    if EXIT_PROGRAM_FLAG == 0:
+        print("Starting main loop 'test_program_for_UDPdataExchanger_ReubenPython3Class.")
+        StartingTime_MainLoopThread = getPreciseSecondsTimeStampString()
     #################################################
     #################################################
 
     #################################################
     #################################################
-    if USE_MyPrint_FLAG == 1 and MyPrint_OPEN_FLAG != 1:
-        print("Failed to open MyPrint_ReubenPython2and3ClassObject.")
-        #ExitProgram_Callback()
     #################################################
     #################################################
-
-    #################################################
-    #################################################
-    if USE_CSVdataLogger_FLAG == 1 and CSVdataLogger_OPEN_FLAG != 1:
-        print("Failed to open CSVdataLogger_ReubenPython3Class.")
-        #ExitProgram_Callback()
-    #################################################
-    #################################################
-
-    #################################################
-    #################################################
-    if USE_MyPlotterPureTkinterStandAloneProcess_FLAG == 1 and MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG != 1:
-        print("Failed to open MyPlotterPureTkinterClass_Object.")
-        #ExitProgram_Callback()
-    #################################################
-    #################################################
-
-    #################################################
-    #################################################
-    print("Starting main loop 'test_program_for_UDPdataExchanger_ReubenPython3Class.")
-    StartingTime_MainLoopThread = getPreciseSecondsTimeStampString()
-
-    while(EXIT_PROGRAM_FLAG == 0 or CSVdataLogger_ReubenPython3ClassObject.IsSaving() == 1):
+    while(EXIT_PROGRAM_FLAG == 0):
 
         try:
             ################################################### GET's
             ###################################################
+            ###################################################
             CurrentTime_MainLoopThread = getPreciseSecondsTimeStampString() - StartingTime_MainLoopThread
+            ###################################################
             ###################################################
             ###################################################
 
             ################################################### GET's
+            ###################################################
             ###################################################
             if UDPdataExchanger_OPEN_FLAG == 1:
 
@@ -906,50 +993,66 @@ if __name__ == '__main__':
                 #print("UDPdataExchanger_MostRecentDict: " + str(UDPdataExchanger_MostRecentDict))
 
                 if "MostRecentMessage_Rx_Dict" in UDPdataExchanger_MostRecentDict:
-                    UDPdataExchanger_MostRecentDict_TestTime = UDPdataExchanger_MostRecentDict["MostRecentMessage_Rx_Dict"]["TestTime"]
-                    UDPdataExchanger_MostRecentDict_TestFloat = UDPdataExchanger_MostRecentDict["MostRecentMessage_Rx_Dict"]["TestFloat"]
-                    #pass
+
+                    if "TestTime" in UDPdataExchanger_MostRecentDict["MostRecentMessage_Rx_Dict"]:
+                        UDPdataExchanger_MostRecentDict_TestTime = UDPdataExchanger_MostRecentDict["MostRecentMessage_Rx_Dict"]["TestTime"]
+
+                    if "TestFloat" in UDPdataExchanger_MostRecentDict["MostRecentMessage_Rx_Dict"]:
+                        UDPdataExchanger_MostRecentDict_TestFloat = UDPdataExchanger_MostRecentDict["MostRecentMessage_Rx_Dict"]["TestFloat"]
+            ###################################################
             ###################################################
             ###################################################
 
             ################################################### SET's
             ###################################################
+            ###################################################
             if UDPdataExchanger_OPEN_FLAG == 1:
                 if UDP_RxOrTxRole == "tx":
-                    SinusoidalInput_FloatValue = (SinusoidalInput_MaxValue + SinusoidalInput_MinValue)/2.0 + 0.5*abs(SinusoidalInput_MaxValue - SinusoidalInput_MinValue)*math.sin(SinusoidalInput_TimeGain*CurrentTime_MainLoopThread)
-                    UDPdataExchanger_Object.SendDictFromExternalProgram(dict([("TestFloat", SinusoidalInput_FloatValue),("TestTime", CurrentTime_MainLoopThread)]))
 
+                    ###################################################
+                    ###################################################
+                    if USE_SinusoidalMotionInput_FLAG == 1:
+                        TestFloatToTx = TestFloatToTx_CallbackOffset + (SinusoidalInput_MaxValue + SinusoidalInput_MinValue)/2.0 + 0.5*abs(SinusoidalInput_MaxValue - SinusoidalInput_MinValue)*math.sin(SinusoidalInput_TimeGain*CurrentTime_MainLoopThread)
+                    else:
+                        TestFloatToTx = TestFloatToTx_CallbackOffset
+                    ###################################################
+                    ###################################################
+
+                    UDPdataExchanger_Object.SendDictFromExternalProgram(dict([("TestFloat", TestFloatToTx),("TestTime", CurrentTime_MainLoopThread)]))
             ###################################################
             ###################################################
+            ###################################################
 
-            #################################################### SET's
-            ####################################################
-            ####################################################
+            ################################################### SET's
+            ###################################################
+            ###################################################
             if UDPdataExchanger_OPEN_FLAG == 1 and CSVdataLogger_OPEN_FLAG == 1:
 
-                ####################################################
-                ####################################################
+                ###################################################
+                ###################################################
                 ListToWrite = []
                 ListToWrite.append(CurrentTime_MainLoopThread)
 
-                ####################################################
+                ###################################################
                 if "Time" in UDPdataExchanger_MostRecentDict:
                     ListToWrite.append(UDPdataExchanger_MostRecentDict["Time"])
-                ####################################################
+                ###################################################
 
-                ####################################################
-                ####################################################
+                ###################################################
+                ###################################################
 
                 CSVdataLogger_ReubenPython3ClassObject.AddDataToCSVfile_ExternalFunctionCall(ListToWrite)
-            ####################################################
-            ####################################################
-            ####################################################
+            ###################################################
+            ###################################################
+            ###################################################
 
-            #################################################### SET's
-            ####################################################
+            ################################################### SET's
+            ###################################################
+            ###################################################
             if MyPlotterPureTkinterStandAloneProcess_OPEN_FLAG == 1:
 
-                ####################################################
+                ###################################################
+                ###################################################
                 MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict = MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.GetMostRecentDataDict()
 
                 if "StandAlonePlottingProcess_ReadyForWritingFlag" in MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject_MostRecentDict:
@@ -964,12 +1067,14 @@ if __name__ == '__main__':
 
 
                             LastTime_MainLoopThread_MyPlotterPureTkinterStandAloneProcess = CurrentTime_MainLoopThread
-                ####################################################
+                ###################################################
+                ###################################################
 
-            ####################################################
-            ####################################################
+            ###################################################
+            ###################################################
+            ###################################################
 
-            time.sleep(0.002)
+            time.sleep(0.030)
 
         except:
             exceptions = sys.exc_info()[0]
@@ -978,8 +1083,12 @@ if __name__ == '__main__':
 
     #################################################
     #################################################
+    #################################################
+    #################################################
 
     ################################################# THIS IS THE EXIT ROUTINE!
+    #################################################
+    #################################################
     #################################################
     print("Exiting main program 'test_program_for_UDPdataExchanger_ReubenPython3Class.")
 
@@ -1003,6 +1112,8 @@ if __name__ == '__main__':
         MyPlotterPureTkinterStandAloneProcess_ReubenPython2and3ClassObject.ExitProgram_Callback()
     #################################################
 
+    #################################################
+    #################################################
     #################################################
     #################################################
 
