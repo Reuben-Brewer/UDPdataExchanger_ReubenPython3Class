@@ -6,7 +6,7 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision E, 02/02/2024
+Software Revision F, 11/20/2025
 
 Verified working on: Python 3.12 for Windows 11 64-bit.
 '''
@@ -335,7 +335,10 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        self.UpdateSetupDictParameters(setup_dict)
+        SuccessFlag = self.UpdateSetupDictParameters(setup_dict)
+        if SuccessFlag != 1:
+            print("UDPdataExchanger_ReubenPython3Class __init__: UpdateSetupDictParameters() failed.")
+            return
         #########################################################
         #########################################################
 
@@ -400,7 +403,7 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
         #########################################################
         #########################################################
-        time.sleep(0.25)
+        #time.sleep(0.25)
         #########################################################
         #########################################################
 
@@ -415,23 +418,16 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
 
     ##########################################################################################################
     ##########################################################################################################
-    def __del__(self):
-        pass
-    ##########################################################################################################
-    ##########################################################################################################
-
-    ##########################################################################################################
-    ##########################################################################################################
     def UpdateSetupDictParameters(self, setup_dict):
 
         #########################################################
         #########################################################
         if "UDP_RxOrTxRole" in setup_dict:
-            self.UDP_RxOrTxRole = str(setup_dict["UDP_RxOrTxRole"])
+            self.UDP_RxOrTxRole = str(setup_dict["UDP_RxOrTxRole"]).lower()
 
             if self.UDP_RxOrTxRole not in ["rx", "tx"]:
                 print("UDPdataExchanger_ReubenPython3Class __init__: Error: UDP_RxOrTxRole must be 'rx' or 'tx'.")
-                return
+                return 0
 
         else:
             self.UDP_RxOrTxRole = "rx"
@@ -497,6 +493,12 @@ class UDPdataExchanger_ReubenPython3Class(Frame): #Subclass the Tkinter Frame
             self.MainThread_TimeToSleepEachLoop = 0.002
 
         print("UDPdataExchanger_ReubenPython3Class __init__: MainThread_TimeToSleepEachLoop: " + str(self.MainThread_TimeToSleepEachLoop))
+        #########################################################
+        #########################################################
+
+        #########################################################
+        #########################################################
+        return 1
         #########################################################
         #########################################################
 
