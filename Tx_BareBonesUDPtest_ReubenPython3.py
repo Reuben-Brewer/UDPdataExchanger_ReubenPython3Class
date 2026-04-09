@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision G, 12/22/2025
+Software Revision H, 04/09/2026
 
-Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit and Raspberry Pi Bookworm.
+Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit, Ubuntu 24.04-LTS,and Raspberry Pi Bookworm.
 '''
 
 __author__ = 'reuben.brewer'
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     #######################################################################################################################
     UDP_IPtargetAddressThatWillRxData = "127.0.0.1"
     UDP_Port = 1 #Cannot use 0 as a port.
-    UDP_TxBufferSizeInBytes = 64  #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
+    UDP_TxBufferSizeInBytes = 100  #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
 
     UDP_SocketObject = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #AF_INET for internet, SOCK_DGRAM for UDP
 
@@ -55,10 +55,6 @@ if __name__ == '__main__':
 
     #######################################################################################################################
     keyboard.on_press_key("esc", ExitProgram_Callback)
-    keyboard.on_press_key("space", ExitProgram_Callback)
-    keyboard.on_press_key("c", ExitProgram_Callback)
-    keyboard.on_press_key("e", ExitProgram_Callback)
-    keyboard.on_press_key("q", ExitProgram_Callback)
     #######################################################################################################################
 
     #######################################################################################################################

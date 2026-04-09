@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision G, 12/22/2025
+Software Revision H, 04/09/2026
 
-Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit  and Raspberry Pi Bookworm.
+Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit, Ubuntu 24.04-LTS,and Raspberry Pi Bookworm.
 '''
 
 #######################################################################################################################
@@ -16,7 +16,7 @@ Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit  and Raspberry P
 #######################################################################################################################
 #######################################################################################################################
 __author__ = 'reuben.brewer'
-__version__ = "Software Revision G, 12/22/2025"
+__version__ = "Software Revision H, 04/09/2026"
 
 from .UDPdataExchanger_ReubenPython3Class import UDPdataExchanger_ReubenPython3Class
 

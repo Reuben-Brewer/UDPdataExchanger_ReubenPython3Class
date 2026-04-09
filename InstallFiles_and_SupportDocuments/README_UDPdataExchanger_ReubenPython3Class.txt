@@ -12,13 +12,15 @@ www.reubotics.com
 
 Apache 2 License
 
-Software Revision G, 12/22/2025
+Software Revision H, 04/09/2026
 
 Verified working on:
 
-Python 3.12/13
+Python 3.11/12/13
 
 Windows 10/11 64-bit
+
+Ubuntu 24.04-LTS
 
 Raspberry Pi Bookworm
 

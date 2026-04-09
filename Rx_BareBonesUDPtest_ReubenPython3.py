@@ -6,9 +6,9 @@ reuben.brewer@gmail.com
 www.reubotics.com
 
 Apache 2 License
-Software Revision G, 12/22/2025
+Software Revision H, 04/09/2026
 
-Verified working on: Python 3.12 for Windows 11 64-bit and Raspberry Pi Bookworm.
+Verified working on: Python 3.11/12/13 for Windows 10/11 64-bit, Ubuntu 24.04-LTS,and Raspberry Pi Bookworm.
 '''
 
 __author__ = 'reuben.brewer'
@@ -40,10 +40,10 @@ if __name__ == '__main__':
     EXIT_PROGRAM_FLAG = 0
 
     #######################################################################################################################
-    UDP_IP_ClientRxSide = "192.168.1.77" #IP address of this listening/client/Rx machine that's running this code and receiving data. We don't need to know the address that's sending/serving/Tx the data.
+    UDP_IP_ClientRxSide = "127.0.0.1" #IP address of this listening/client/Rx machine that's running this code and receiving data. We don't need to know the address that's sending/serving/Tx the data.
 
     UDP_Port = 1 #Cannot use 0 as a port.
-    UDP_RxBufferSizeInBytes = 200 #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
+    UDP_RxBufferSizeInBytes = 1000 #Max-packet-size is 1500 in-practice (maximum transmission unit (MTU) to prevent packet-fragmenting), 65507 bytes in theory-only
 
     UDP_SocketObject = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  #AF_INET for internet, SOCK_DGRAM for UDP
     UDP_SocketObject.bind((UDP_IP_ClientRxSide, UDP_Port)) #bind() needed only on the client/Rx side, not on the server/Tx side.
